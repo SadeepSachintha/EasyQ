@@ -1,0 +1,183 @@
+<?php
+
+namespace App\Http\Controllers\Tenant;
+
+use App\Http\Controllers\Controller;
+use App\Models\QueueItem;
+use App\Models\Service;
+use App\Models\Booking;
+use App\Events\QueueUpdated;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+
+class QueueController extends Controller
+{
+    /**
+     * Get queue status data
+     */
+    public function getQueueData()
+    {
+        $today = Carbon::today();
+        
+        $waiting = QueueItem::whereDate('created_at', $today)
+            ->where('status', 'waiting')
+            ->orderBy('id', 'asc')
+            ->get();
+            
+        $inService = QueueItem::whereDate('created_at', $today)
+            ->where('status', 'in-service')
+            ->orderBy('called_at', 'asc')
+            ->get();
+            
+        $completed = QueueItem::whereDate('created_at', $today)
+            ->whereIn('status', ['completed', 'no-show'])
+            ->orderBy('updated_at', 'desc')
+            ->take(10)
+            ->get();
+
+        return [
+            'waiting' => $waiting,
+            'in_service' => $inService,
+            'completed' => $completed,
+            'stats' => [
+                'total_waiting' => count($waiting),
+                'total_in_service' => count($inService),
+                'next_ticket' => count($waiting) > 0 ? $waiting[0]->ticket_number : 'None',
+                'avg_wait_minutes' => count($waiting) * 15 // Estimated 15 mins per service
+            ]
+        ];
+    }
+
+    /**
+     * Fetch status for JSON APIs
+     */
+    public function status()
+    {
+        return response()->json($this->getQueueData());
+    }
+
+    /**
+     * Let a walk-in join the queue
+     */
+    public function join(Request $request)
+    {
+        $request->validate([
+            'customer_name' => 'required|string|max:100',
+            'customer_phone' => 'nullable|string|max:20',
+            'service_id' => 'nullable|exists:services,id',
+        ]);
+
+        $today = Carbon::today();
+        $countToday = QueueItem::whereDate('created_at', $today)->count();
+        $ticketNum = 'Q-' . str_pad((string)($countToday + 1), 3, '0', STR_PAD_LEFT);
+
+        $serviceName = 'Walk-in General';
+        if ($request->service_id) {
+            $service = Service::find($request->service_id);
+            if ($service) {
+                $serviceName = $service->name;
+            }
+        }
+
+        // Calculate estimated wait time
+        $waitingCount = QueueItem::whereDate('created_at', $today)
+            ->where('status', 'waiting')
+            ->count();
+        $estWait = ($waitingCount + QueueItem::whereDate('created_at', $today)->where('status', 'in-service')->count()) * 15;
+
+        $item = QueueItem::create([
+            'customer_name' => $request->customer_name,
+            'customer_phone' => $request->customer_phone,
+            'ticket_number' => $ticketNum,
+            'service_name' => $serviceName,
+            'status' => 'waiting',
+            'estimated_wait_minutes' => $estWait,
+        ]);
+
+        // Broadcast update
+        broadcast(new QueueUpdated($this->getQueueData()))->toOthers();
+
+        return response()->json([
+            'success' => true,
+            'ticket' => $item
+        ]);
+    }
+
+    /**
+     * Call the next waiting customer (Move to in-service)
+     */
+    public function callNext()
+    {
+        $today = Carbon::today();
+        $next = QueueItem::whereDate('created_at', $today)
+            ->where('status', 'waiting')
+            ->orderBy('id', 'asc')
+            ->first();
+
+        if ($next) {
+            $next->update([
+                'status' => 'in-service',
+                'called_at' => Carbon::now()
+            ]);
+
+            // Re-calculate wait times for remaining waiting customers
+            $waiting = QueueItem::whereDate('created_at', $today)
+                ->where('status', 'waiting')
+                ->orderBy('id', 'asc')
+                ->get();
+                
+            foreach ($waiting as $index => $item) {
+                $item->update([
+                    'estimated_wait_minutes' => ($index + 1) * 15
+                ]);
+            }
+
+            broadcast(new QueueUpdated($this->getQueueData()));
+            return response()->json(['success' => true, 'item' => $next]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'No customers waiting']);
+    }
+
+    /**
+     * Mark a customer service as completed
+     */
+    public function complete($id)
+    {
+        $item = QueueItem::findOrFail($id);
+        $item->update([
+            'status' => 'completed',
+            'completed_at' => Carbon::now()
+        ]);
+
+        broadcast(new QueueUpdated($this->getQueueData()));
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Mark a customer as no-show
+     */
+    public function noshow($id)
+    {
+        $item = QueueItem::findOrFail($id);
+        $item->update([
+            'status' => 'no-show',
+            'completed_at' => Carbon::now()
+        ]);
+
+        broadcast(new QueueUpdated($this->getQueueData()));
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Remove an item from the queue
+     */
+    public function remove($id)
+    {
+        $item = QueueItem::findOrFail($id);
+        $item->delete();
+
+        broadcast(new QueueUpdated($this->getQueueData()));
+        return response()->json(['success' => true]);
+    }
+}
