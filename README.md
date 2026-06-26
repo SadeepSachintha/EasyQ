@@ -147,7 +147,15 @@ We enforce strict style guides. Run Pint to check or auto-format changes:
 ```
 
 ### NativePHP Desktop App Packaging
-To compile and run the application as a standalone desktop app using Electron:
-```bash
-php artisan native:serve
-```
+EasyQ is packaged inside a native Electron shell container via NativePHP.
+
+* **Configuration**: Managed inside [config/nativephp.php](file:///d:/xampp/htdocs/EasyQ/config/nativephp.php) and [NativeAppServiceProvider.php](file:///d:/xampp/htdocs/EasyQ/app/Providers/NativeAppServiceProvider.php) (window size, title bar routing, background workers).
+* **Run in Development**: Start the Electron shell and auto-reload:
+  ```bash
+  php artisan native:serve
+  ```
+* **Build Standalone Installer**: Compile a native production installer (e.g., `.exe` for Windows) containing the PHP runtime, Electron engine, and project code:
+  ```bash
+  php artisan native:build
+  ```
+  The installer executable will be saved in the `dist/` directory at the project root.
