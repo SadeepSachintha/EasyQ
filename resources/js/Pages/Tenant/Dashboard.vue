@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
@@ -11,6 +11,11 @@ const props = defineProps({
 
 const queue = ref(props.initialQueue);
 const isProcessing = ref(false);
+const activeCounter = ref(localStorage.getItem('easyq_active_counter') || 'Counter 1');
+
+watch(activeCounter, (newVal) => {
+    localStorage.setItem('easyq_active_counter', newVal);
+});
 
 const fetchQueueStatus = () => {
     axios.get(route('tenant.queue.status'))
@@ -22,7 +27,7 @@ const fetchQueueStatus = () => {
 // Admin actions
 const callNext = () => {
     isProcessing.value = true;
-    axios.post(route('tenant.queue.call'))
+    axios.post(route('tenant.queue.call'), { counter_name: activeCounter.value })
         .then(response => {
             if (response.data.success) {
                 fetchQueueStatus();
@@ -145,15 +150,30 @@ onMounted(() => {
                     
                     <!-- Call Next / Waiting List -->
                     <div class="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm lg:col-span-2 space-y-6">
-                        <div class="flex justify-between items-center">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                             <h3 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
                                 <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
                                 <span>Waiting Queue</span>
                             </h3>
-                            <button @click="callNext" :disabled="isProcessing" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl transition flex items-center space-x-2 shadow-sm shadow-indigo-600/10 hover:shadow-indigo-600/20 disabled:opacity-50">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
-                                <span>Call Next Customer</span>
-                            </button>
+                            <div class="flex items-center space-x-3">
+                                <div class="flex items-center space-x-1.5">
+                                    <label for="counter_select" class="text-xs font-bold text-slate-400 uppercase tracking-wider">Desk/Counter:</label>
+                                    <select id="counter_select" v-model="activeCounter" class="bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:ring-indigo-500 focus:border-indigo-500 py-1.5 px-3">
+                                        <option value="Counter 1">Counter 1</option>
+                                        <option value="Counter 2">Counter 2</option>
+                                        <option value="Counter 3">Counter 3</option>
+                                        <option value="Desk A">Desk A</option>
+                                        <option value="Desk B">Desk B</option>
+                                        <option value="Desk C">Desk C</option>
+                                        <option value="Office 1">Office 1</option>
+                                        <option value="Office 2">Office 2</option>
+                                    </select>
+                                </div>
+                                <button @click="callNext" :disabled="isProcessing" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl transition flex items-center space-x-1.5 shadow-sm shadow-indigo-600/10 hover:shadow-indigo-600/20 disabled:opacity-50 text-sm">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+                                    <span>Call Next</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div v-if="queue.waiting.length === 0" class="text-center py-16 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
@@ -205,6 +225,9 @@ onMounted(() => {
                                         <span class="inline-flex px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold font-mono text-sm">{{ item.ticket_number }}</span>
                                         <h4 class="text-sm font-bold text-slate-800 mt-2">{{ item.customer_name }}</h4>
                                         <p class="text-xs text-slate-400 mt-0.5 capitalize">{{ item.service_name }}</p>
+                                        <span v-if="item.counter_name" class="inline-flex items-center mt-2 text-[10px] font-bold text-indigo-650 bg-indigo-50 border border-indigo-100 rounded px-1.5 py-0.5 uppercase tracking-wide">
+                                            {{ item.counter_name }}
+                                        </span>
                                     </div>
                                     <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">Serving</span>
                                 </div>
@@ -241,7 +264,10 @@ onMounted(() => {
                                 <tr v-for="item in queue.completed" :key="item.id" class="hover:bg-slate-50/20 transition">
                                     <td class="py-3 px-4 font-mono font-bold text-slate-500">{{ item.ticket_number }}</td>
                                     <td class="py-3 px-4 text-sm font-medium text-slate-700">{{ item.customer_name }}</td>
-                                    <td class="py-3 px-4 text-sm text-slate-500 capitalize">{{ item.service_name }}</td>
+                                    <td class="py-3 px-4 text-sm text-slate-500 capitalize">
+                                        {{ item.service_name }}
+                                        <span v-if="item.counter_name" class="block text-[10px] text-slate-400 font-bold mt-0.5 uppercase tracking-wide">{{ item.counter_name }}</span>
+                                    </td>
                                     <td class="py-3 px-4 text-sm">
                                         <span v-if="item.status === 'completed'" class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Completed</span>
                                         <span v-else class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">No Show</span>

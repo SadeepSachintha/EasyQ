@@ -57,6 +57,20 @@ class QueueController extends Controller
     }
 
     /**
+     * Render the lobby TV display screen
+     */
+    public function display()
+    {
+        $services = Service::all();
+        $queueData = $this->getQueueData();
+        return \Inertia\Inertia::render('Tenant/Display', [
+            'services' => $services,
+            'initialQueue' => $queueData,
+            'tenant' => tenant(),
+        ]);
+    }
+
+    /**
      * Let a walk-in join the queue
      */
     public function join(Request $request)
@@ -106,8 +120,14 @@ class QueueController extends Controller
     /**
      * Call the next waiting customer (Move to in-service)
      */
-    public function callNext()
+    public function callNext(Request $request)
     {
+        $request->validate([
+            'counter_name' => 'nullable|string|max:50'
+        ]);
+
+        $counterName = $request->input('counter_name', 'Main Desk');
+
         $today = Carbon::today();
         $next = QueueItem::whereDate('created_at', $today)
             ->where('status', 'waiting')
@@ -117,6 +137,7 @@ class QueueController extends Controller
         if ($next) {
             $next->update([
                 'status' => 'in-service',
+                'counter_name' => $counterName,
                 'called_at' => Carbon::now()
             ]);
 

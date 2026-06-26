@@ -35,6 +35,9 @@ Route::middleware([
         ]);
     })->name('tenant.home');
 
+    // Lobby TV Display Screen
+    Route::get('/display', [QueueController::class, 'display'])->name('tenant.display');
+
     // Customer Actions
     Route::post('/queue/join', [QueueController::class, 'join'])->name('tenant.queue.join');
     Route::get('/queue/status', [QueueController::class, 'status'])->name('tenant.queue.status');

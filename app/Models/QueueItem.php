@@ -15,6 +15,7 @@ class QueueItem extends Model
         'service_name',
         'status',
         'estimated_wait_minutes',
+        'counter_name',
         'called_at',
         'completed_at'
     ];
