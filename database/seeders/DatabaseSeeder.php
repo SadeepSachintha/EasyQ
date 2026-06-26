@@ -14,24 +14,31 @@ class DatabaseSeeder extends Seeder
     {
         if (tenant('id') !== null) {
             Service::create([
-                'name' => 'General Consultation',
-                'description' => 'A basic session with a specialist.',
-                'price' => 50.00,
-                'duration_minutes' => 15,
+                'name' => 'Haircut & Styling',
+                'description' => 'Classic haircut with wash and blow dry.',
+                'price' => 35.00,
+                'duration_minutes' => 30,
             ]);
 
             Service::create([
-                'name' => 'Premium Service & Treatment',
-                'description' => 'Extended care with advanced methods.',
-                'price' => 120.00,
+                'name' => 'Hair Coloring & Highlights',
+                'description' => 'Professional full head color or highlights.',
+                'price' => 85.00,
+                'duration_minutes' => 90,
+            ]);
+
+            Service::create([
+                'name' => 'Manicure & Pedicure',
+                'description' => 'Complete nail care treatment and polish.',
+                'price' => 45.00,
                 'duration_minutes' => 45,
             ]);
 
             Service::create([
-                'name' => 'Quick Express Service',
-                'description' => 'Fast turnaround for urgent needs.',
-                'price' => 30.00,
-                'duration_minutes' => 10,
+                'name' => 'Facial & Skincare',
+                'description' => 'Deep cleansing facial and hydration mask.',
+                'price' => 60.00,
+                'duration_minutes' => 60,
             ]);
         }
     }
