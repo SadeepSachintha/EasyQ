@@ -149,7 +149,7 @@ class QueueController extends Controller
         // Send check-in welcome SMS
         if ($item->customer_phone) {
             $msg = "EasyQ Welcome! You joined the queue. Ticket: {$item->ticket_number}. Est. wait: {$item->estimated_wait_minutes} mins.";
-            \App\Services\SmsService::send($item->customer_phone, $msg);
+            \App\Jobs\SendSmsJob::dispatch($item->customer_phone, $msg);
         }
 
         // Broadcast update
@@ -188,7 +188,7 @@ class QueueController extends Controller
             // Send call next SMS
             if ($next->customer_phone) {
                 $msg = "EasyQ Alert: Your ticket {$next->ticket_number} is being served at {$counterName}!";
-                \App\Services\SmsService::send($next->customer_phone, $msg);
+                \App\Jobs\SendSmsJob::dispatch($next->customer_phone, $msg);
             }
 
             // Find new next-in-line waiting customer to send "Near Turn" alert
@@ -199,7 +199,7 @@ class QueueController extends Controller
 
             if ($newNext && $newNext->customer_phone) {
                 $msg = "EasyQ Update: You are next in line! Please prepare to proceed shortly.";
-                \App\Services\SmsService::send($newNext->customer_phone, $msg);
+                \App\Jobs\SendSmsJob::dispatch($newNext->customer_phone, $msg);
             }
 
             broadcast(new QueueUpdated($this->getQueueData()));

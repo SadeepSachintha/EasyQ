@@ -39,7 +39,7 @@ Route::middleware([
     Route::get('/display', [QueueController::class, 'display'])->name('tenant.display');
 
     // Customer Actions
-    Route::post('/queue/join', [QueueController::class, 'join'])->name('tenant.queue.join');
+    Route::post('/queue/join', [QueueController::class, 'join'])->middleware('throttle:checkin')->name('tenant.queue.join');
     Route::get('/queue/status', [QueueController::class, 'status'])->name('tenant.queue.status');
 
     // Scoped Auth & Admin Dashboard inside the Tenant Database
