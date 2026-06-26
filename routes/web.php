@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 foreach (['localhost', '127.0.0.1'] as $domain) {
     Route::domain($domain)->group(function () {
@@ -17,7 +17,7 @@ foreach (['localhost', '127.0.0.1'] as $domain) {
             ]);
 
             $id = strtolower($request->company);
-            
+
             // Create tenant
             $tenant = Tenant::create(['id' => $id]);
             $domain = "{$id}.localhost";
@@ -26,7 +26,7 @@ foreach (['localhost', '127.0.0.1'] as $domain) {
             return response()->json([
                 'success' => true,
                 'domain' => $domain,
-                'redirect_url' => "http://{$domain}:8000/register"
+                'redirect_url' => "http://{$domain}:8000/register",
             ]);
         });
     });

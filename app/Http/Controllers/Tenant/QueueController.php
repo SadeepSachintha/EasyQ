@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Events\QueueUpdated;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendSmsJob;
 use App\Models\QueueItem;
 use App\Models\Service;
-use App\Models\Booking;
-use App\Events\QueueUpdated;
-use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class QueueController extends Controller
 {
@@ -18,17 +20,17 @@ class QueueController extends Controller
     public function getQueueData()
     {
         $today = Carbon::today();
-        
+
         $waiting = QueueItem::whereDate('created_at', $today)
             ->where('status', 'waiting')
             ->orderBy('id', 'asc')
             ->get();
-            
+
         $inService = QueueItem::whereDate('created_at', $today)
             ->where('status', 'in-service')
             ->orderBy('called_at', 'asc')
             ->get();
-            
+
         $completed = QueueItem::whereDate('created_at', $today)
             ->whereIn('status', ['completed', 'no-show'])
             ->orderBy('updated_at', 'desc')
@@ -37,7 +39,7 @@ class QueueController extends Controller
 
         // Calculate actual average service duration today (in seconds)
         // If there are completed items, compute average. Otherwise use 10 minutes (600s) default.
-        $avgServiceSeconds = \Illuminate\Support\Facades\DB::table('queue_items')
+        $avgServiceSeconds = DB::table('queue_items')
             ->whereDate('created_at', $today)
             ->where('status', 'completed')
             ->whereNotNull('called_at')
@@ -46,7 +48,7 @@ class QueueController extends Controller
             ->value('avg_time');
 
         $avgServiceMinutes = $avgServiceSeconds ? ($avgServiceSeconds / 60) : 10;
-        
+
         $activeCounters = max(1, count($inService));
 
         // Update estimated wait times for all waiting items dynamically in the database
@@ -67,8 +69,8 @@ class QueueController extends Controller
                 'total_in_service' => count($inService),
                 'next_ticket' => count($waiting) > 0 ? $waiting[0]->ticket_number : 'None',
                 'avg_wait_minutes' => $nextWaitMinutes,
-                'avg_service_minutes' => round($avgServiceMinutes, 1)
-            ]
+                'avg_service_minutes' => round($avgServiceMinutes, 1),
+            ],
         ];
     }
 
@@ -87,7 +89,8 @@ class QueueController extends Controller
     {
         $services = Service::all();
         $queueData = $this->getQueueData();
-        return \Inertia\Inertia::render('Tenant/Display', [
+
+        return Inertia::render('Tenant/Display', [
             'services' => $services,
             'initialQueue' => $queueData,
             'tenant' => tenant(),
@@ -107,7 +110,7 @@ class QueueController extends Controller
 
         $today = Carbon::today();
         $countToday = QueueItem::whereDate('created_at', $today)->count();
-        $ticketNum = 'Q-' . str_pad((string)($countToday + 1), 3, '0', STR_PAD_LEFT);
+        $ticketNum = 'Q-'.str_pad((string) ($countToday + 1), 3, '0', STR_PAD_LEFT);
 
         $serviceName = 'Walk-in General';
         if ($request->service_id) {
@@ -124,8 +127,8 @@ class QueueController extends Controller
         $inServiceCount = QueueItem::whereDate('created_at', $today)
             ->where('status', 'in-service')
             ->count();
-        
-        $avgServiceSeconds = \Illuminate\Support\Facades\DB::table('queue_items')
+
+        $avgServiceSeconds = DB::table('queue_items')
             ->whereDate('created_at', $today)
             ->where('status', 'completed')
             ->whereNotNull('called_at')
@@ -149,7 +152,7 @@ class QueueController extends Controller
         // Send check-in welcome SMS
         if ($item->customer_phone) {
             $msg = "EasyQ Welcome! You joined the queue. Ticket: {$item->ticket_number}. Est. wait: {$item->estimated_wait_minutes} mins.";
-            \App\Jobs\SendSmsJob::dispatch($item->customer_phone, $msg);
+            SendSmsJob::dispatch($item->customer_phone, $msg);
         }
 
         // Broadcast update
@@ -157,7 +160,7 @@ class QueueController extends Controller
 
         return response()->json([
             'success' => true,
-            'ticket' => $item
+            'ticket' => $item,
         ]);
     }
 
@@ -167,7 +170,7 @@ class QueueController extends Controller
     public function callNext(Request $request)
     {
         $request->validate([
-            'counter_name' => 'nullable|string|max:50'
+            'counter_name' => 'nullable|string|max:50',
         ]);
 
         $counterName = $request->input('counter_name', 'Main Desk');
@@ -182,13 +185,13 @@ class QueueController extends Controller
             $next->update([
                 'status' => 'in-service',
                 'counter_name' => $counterName,
-                'called_at' => Carbon::now()
+                'called_at' => Carbon::now(),
             ]);
 
             // Send call next SMS
             if ($next->customer_phone) {
                 $msg = "EasyQ Alert: Your ticket {$next->ticket_number} is being served at {$counterName}!";
-                \App\Jobs\SendSmsJob::dispatch($next->customer_phone, $msg);
+                SendSmsJob::dispatch($next->customer_phone, $msg);
             }
 
             // Find new next-in-line waiting customer to send "Near Turn" alert
@@ -198,11 +201,12 @@ class QueueController extends Controller
                 ->first();
 
             if ($newNext && $newNext->customer_phone) {
-                $msg = "EasyQ Update: You are next in line! Please prepare to proceed shortly.";
-                \App\Jobs\SendSmsJob::dispatch($newNext->customer_phone, $msg);
+                $msg = 'EasyQ Update: You are next in line! Please prepare to proceed shortly.';
+                SendSmsJob::dispatch($newNext->customer_phone, $msg);
             }
 
             broadcast(new QueueUpdated($this->getQueueData()));
+
             return response()->json(['success' => true, 'item' => $next]);
         }
 
@@ -217,10 +221,11 @@ class QueueController extends Controller
         $item = QueueItem::findOrFail($id);
         $item->update([
             'status' => 'completed',
-            'completed_at' => Carbon::now()
+            'completed_at' => Carbon::now(),
         ]);
 
         broadcast(new QueueUpdated($this->getQueueData()));
+
         return response()->json(['success' => true]);
     }
 
@@ -232,10 +237,11 @@ class QueueController extends Controller
         $item = QueueItem::findOrFail($id);
         $item->update([
             'status' => 'no-show',
-            'completed_at' => Carbon::now()
+            'completed_at' => Carbon::now(),
         ]);
 
         broadcast(new QueueUpdated($this->getQueueData()));
+
         return response()->json(['success' => true]);
     }
 
@@ -248,6 +254,7 @@ class QueueController extends Controller
         $item->delete();
 
         broadcast(new QueueUpdated($this->getQueueData()));
+
         return response()->json(['success' => true]);
     }
 }

@@ -14,6 +14,7 @@ class SendSmsJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $phone;
+
     public $message;
 
     /**

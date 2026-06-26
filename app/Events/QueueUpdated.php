@@ -22,7 +22,7 @@ class QueueUpdated implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('tenant.' . tenant('id') . '.queue'),
+            new Channel('tenant.'.tenant('id').'.queue'),
         ];
     }
 

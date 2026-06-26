@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Tenant;
 use Illuminate\Console\Command;
 
 class CreateTenant extends Command
@@ -20,17 +21,19 @@ class CreateTenant extends Command
         $id = $this->argument('id');
         $this->info("Creating tenant: {$id}...");
 
-        if (\App\Models\Tenant::where('id', $id)->exists()) {
-            $this->error("Tenant already exists!");
+        if (Tenant::where('id', $id)->exists()) {
+            $this->error('Tenant already exists!');
+
             return self::FAILURE;
         }
 
-        $tenant = \App\Models\Tenant::create(['id' => $id]);
+        $tenant = Tenant::create(['id' => $id]);
         $domainName = "{$id}.localhost";
         $tenant->domains()->create(['domain' => $domainName]);
 
         $this->info("Tenant {$id} created successfully!");
         $this->info("Domain: http://{$domainName}:8000");
+
         return self::SUCCESS;
     }
 }

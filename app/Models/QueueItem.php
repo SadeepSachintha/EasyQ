@@ -17,7 +17,7 @@ class QueueItem extends Model
         'estimated_wait_minutes',
         'counter_name',
         'called_at',
-        'completed_at'
+        'completed_at',
     ];
 
     public function booking(): BelongsTo

@@ -16,7 +16,7 @@ class Booking extends Model
         'booking_date',
         'start_time',
         'end_time',
-        'status'
+        'status',
     ];
 
     public function service(): BelongsTo

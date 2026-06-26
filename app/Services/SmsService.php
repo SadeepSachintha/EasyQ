@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class SmsService
 {
@@ -36,7 +36,8 @@ class SmsService
         $from = config('services.twilio.from');
 
         if (empty($sid) || empty($token) || empty($from)) {
-            Log::warning("Twilio configuration is missing. Falling back to Log driver.");
+            Log::warning('Twilio configuration is missing. Falling back to Log driver.');
+
             return self::sendLog($phone, $message);
         }
 
@@ -46,18 +47,21 @@ class SmsService
                 ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
                     'To' => $phone,
                     'From' => $from,
-                    'Body' => $message
+                    'Body' => $message,
                 ]);
 
             if ($response->successful()) {
                 Log::info("Twilio SMS sent successfully to {$phone}");
+
                 return true;
             }
 
-            Log::error("Twilio SMS failed to {$phone}: " . $response->body());
+            Log::error("Twilio SMS failed to {$phone}: ".$response->body());
+
             return false;
         } catch (\Exception $e) {
-            Log::error("Twilio SMS error: " . $e->getMessage());
+            Log::error('Twilio SMS error: '.$e->getMessage());
+
             return false;
         }
     }
@@ -69,14 +73,15 @@ class SmsService
     {
         $logPath = storage_path('logs/sms.log');
         $dir = dirname($logPath);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
         $timestamp = date('Y-m-d H:i:s');
         $logEntry = "[$timestamp] TO: {$phone} | MESSAGE: {$message}\n";
-        
+
         file_put_contents($logPath, $logEntry, FILE_APPEND);
         Log::info("Mock SMS logged to sms.log for {$phone}");
+
         return true;
     }
 }

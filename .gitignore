@@ -22,3 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Database data directories and test files
+/db-data/
+/database/tenanttest
