@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'sms' => [
+        'driver' => env('SMS_DRIVER', 'log'),
+    ],
+
+    'twilio' => [
+        'sid' => env('TWILIO_SMS_SID'),
+        'token' => env('TWILIO_SMS_TOKEN'),
+        'from' => env('TWILIO_SMS_FROM'),
+    ],
+
 ];

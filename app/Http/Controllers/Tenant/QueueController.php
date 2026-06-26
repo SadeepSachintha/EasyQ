@@ -35,6 +35,29 @@ class QueueController extends Controller
             ->take(10)
             ->get();
 
+        // Calculate actual average service duration today (in seconds)
+        // If there are completed items, compute average. Otherwise use 10 minutes (600s) default.
+        $avgServiceSeconds = \Illuminate\Support\Facades\DB::table('queue_items')
+            ->whereDate('created_at', $today)
+            ->where('status', 'completed')
+            ->whereNotNull('called_at')
+            ->whereNotNull('completed_at')
+            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, called_at, completed_at)) as avg_time')
+            ->value('avg_time');
+
+        $avgServiceMinutes = $avgServiceSeconds ? ($avgServiceSeconds / 60) : 10;
+        
+        $activeCounters = max(1, count($inService));
+
+        // Update estimated wait times for all waiting items dynamically in the database
+        foreach ($waiting as $index => $item) {
+            $estWait = max(1, round((($index + 1) / $activeCounters) * $avgServiceMinutes));
+            $item->update(['estimated_wait_minutes' => $estWait]);
+        }
+
+        // Total wait time for the next new joiner
+        $nextWaitMinutes = max(1, round(((count($waiting) + 1) / $activeCounters) * $avgServiceMinutes));
+
         return [
             'waiting' => $waiting,
             'in_service' => $inService,
@@ -43,7 +66,8 @@ class QueueController extends Controller
                 'total_waiting' => count($waiting),
                 'total_in_service' => count($inService),
                 'next_ticket' => count($waiting) > 0 ? $waiting[0]->ticket_number : 'None',
-                'avg_wait_minutes' => count($waiting) * 15 // Estimated 15 mins per service
+                'avg_wait_minutes' => $nextWaitMinutes,
+                'avg_service_minutes' => round($avgServiceMinutes, 1)
             ]
         ];
     }
@@ -93,11 +117,25 @@ class QueueController extends Controller
             }
         }
 
-        // Calculate estimated wait time
+        // Calculate estimated wait time using smart dynamic logic
         $waitingCount = QueueItem::whereDate('created_at', $today)
             ->where('status', 'waiting')
             ->count();
-        $estWait = ($waitingCount + QueueItem::whereDate('created_at', $today)->where('status', 'in-service')->count()) * 15;
+        $inServiceCount = QueueItem::whereDate('created_at', $today)
+            ->where('status', 'in-service')
+            ->count();
+        
+        $avgServiceSeconds = \Illuminate\Support\Facades\DB::table('queue_items')
+            ->whereDate('created_at', $today)
+            ->where('status', 'completed')
+            ->whereNotNull('called_at')
+            ->whereNotNull('completed_at')
+            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, called_at, completed_at)) as avg_time')
+            ->value('avg_time');
+
+        $avgServiceMinutes = $avgServiceSeconds ? ($avgServiceSeconds / 60) : 10;
+        $activeCounters = max(1, $inServiceCount);
+        $estWait = max(1, round((($waitingCount + 1) / $activeCounters) * $avgServiceMinutes));
 
         $item = QueueItem::create([
             'customer_name' => $request->customer_name,
@@ -107,6 +145,12 @@ class QueueController extends Controller
             'status' => 'waiting',
             'estimated_wait_minutes' => $estWait,
         ]);
+
+        // Send check-in welcome SMS
+        if ($item->customer_phone) {
+            $msg = "EasyQ Welcome! You joined the queue. Ticket: {$item->ticket_number}. Est. wait: {$item->estimated_wait_minutes} mins.";
+            \App\Services\SmsService::send($item->customer_phone, $msg);
+        }
 
         // Broadcast update
         broadcast(new QueueUpdated($this->getQueueData()))->toOthers();
@@ -141,16 +185,21 @@ class QueueController extends Controller
                 'called_at' => Carbon::now()
             ]);
 
-            // Re-calculate wait times for remaining waiting customers
-            $waiting = QueueItem::whereDate('created_at', $today)
+            // Send call next SMS
+            if ($next->customer_phone) {
+                $msg = "EasyQ Alert: Your ticket {$next->ticket_number} is being served at {$counterName}!";
+                \App\Services\SmsService::send($next->customer_phone, $msg);
+            }
+
+            // Find new next-in-line waiting customer to send "Near Turn" alert
+            $newNext = QueueItem::whereDate('created_at', $today)
                 ->where('status', 'waiting')
                 ->orderBy('id', 'asc')
-                ->get();
-                
-            foreach ($waiting as $index => $item) {
-                $item->update([
-                    'estimated_wait_minutes' => ($index + 1) * 15
-                ]);
+                ->first();
+
+            if ($newNext && $newNext->customer_phone) {
+                $msg = "EasyQ Update: You are next in line! Please prepare to proceed shortly.";
+                \App\Services\SmsService::send($newNext->customer_phone, $msg);
             }
 
             broadcast(new QueueUpdated($this->getQueueData()));
@@ -163,7 +212,7 @@ class QueueController extends Controller
     /**
      * Mark a customer service as completed
      */
-    public function complete($id)
+    public function complete($tenant, $id)
     {
         $item = QueueItem::findOrFail($id);
         $item->update([
@@ -178,7 +227,7 @@ class QueueController extends Controller
     /**
      * Mark a customer as no-show
      */
-    public function noshow($id)
+    public function noshow($tenant, $id)
     {
         $item = QueueItem::findOrFail($id);
         $item->update([
@@ -193,7 +242,7 @@ class QueueController extends Controller
     /**
      * Remove an item from the queue
      */
-    public function remove($id)
+    public function remove($tenant, $id)
     {
         $item = QueueItem::findOrFail($id);
         $item->delete();
