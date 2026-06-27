@@ -131,7 +131,11 @@ Open separate terminal instances to run the local server, asset compiler, and We
 ## Testing & Quality Control
 
 ### Running Local Tests
-We have built a robust, transaction-based multi-database testing framework. Run all tests locally using PHPUnit:
+We have built a robust, transaction-based multi-database testing framework. Before running the tests locally, ensure you have created a dedicated test database `easyq_test` in your MariaDB instance:
+```sql
+CREATE DATABASE IF NOT EXISTS easyq_test;
+```
+Then, execute the PHPUnit test suite:
 ```bash
 php artisan test
 ```
