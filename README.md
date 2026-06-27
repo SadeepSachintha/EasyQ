@@ -159,3 +159,4 @@ EasyQ is packaged inside a native Electron shell container via NativePHP.
   php artisan native:build
   ```
   The installer executable will be saved in the `dist/` directory at the project root.
+* **Automated Release Pipeline**: A GitHub Actions workflow configured in [.github/workflows/release.yml](file:///d:/xampp/htdocs/EasyQ/.github/workflows/release.yml) triggers automatically when a version tag matching `v*` (e.g., `v1.0.0`) is pushed to the repository, or via manual `workflow_dispatch`. It executes parallel matrix builds for Windows, macOS, and Linux runners, and uploads the generated standalone installer packages directly to a GitHub Release draft.
