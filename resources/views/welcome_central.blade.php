@@ -24,8 +24,9 @@
 
     <!-- Header -->
     <header class="container mx-auto px-6 py-6 flex justify-between items-center z-10">
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-3">
             <span class="text-2xl font-extrabold tracking-wider bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 bg-clip-text text-transparent">EasyQ</span>
+            <span class="text-xs text-gray-500 font-semibold self-end mb-1">by <a href="https://ss-labz.pages.dev/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-400 transition-colors">SS Labz</a></span>
         </div>
         <div>
             <span class="text-sm text-gray-400">Multi-Tenant Queue Management Engine</span>
@@ -94,7 +95,7 @@
 
     <!-- Footer -->
     <footer class="border-t border-gray-900 py-6 text-center text-xs text-gray-600">
-        <p>&copy; 2026 EasyQ SaaS. Powered by Laravel 12 & Reverb.</p>
+        <p>&copy; 2026 EasyQ SaaS. A product of <a href="https://ss-labz.pages.dev/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors underline">SS Labz</a>. Powered by Laravel 12 & Reverb.</p>
     </footer>
 
     <!-- Form Script -->

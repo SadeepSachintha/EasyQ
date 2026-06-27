@@ -248,6 +248,11 @@ onMounted(() => {
             </div>
         </main>
 
+        <!-- Footer -->
+        <footer class="border-t border-slate-900/60 bg-slate-950/40 py-6 text-center text-xs text-slate-500 z-10">
+            <p>&copy; 2026 EasyQ. A product of <a href="https://ss-labz.pages.dev/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors underline font-medium">SS Labz</a>. All rights reserved.</p>
+        </footer>
+
         <!-- Join Queue Modal (Slide Up / Modal Glassmorphism) -->
         <div v-if="showJoinModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl relative">

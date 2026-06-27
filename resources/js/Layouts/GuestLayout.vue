@@ -27,5 +27,10 @@ import { Link } from '@inertiajs/vue3';
         >
             <slot />
         </div>
+
+        <!-- Footer -->
+        <div class="mt-8 text-center text-xs text-slate-500 z-10">
+            <p>EasyQ is a product of <a href="https://ss-labz.pages.dev/" target="_blank" rel="noopener noreferrer" class="hover:text-indigo-600 transition-colors underline font-medium">SS Labz</a></p>
+        </div>
     </div>
 </template>

@@ -1,6 +1,7 @@
 # EasyQ - Multi-Tenant Real-Time Queue & Booking SaaS
+### A product of [SS Labz](https://ss-labz.pages.dev/)
 
-**EasyQ** is an enterprise-grade, high-performance, centralized SaaS application designed for local service-based businesses—such as salons, spas, medical clinics, and auto repair shops—to transition from manual scheduling systems to a real-time digital queue management and booking platform.
+**EasyQ** is an enterprise-grade, high-performance, centralized SaaS application developed by **[SS Labz](https://ss-labz.pages.dev/)** designed for local service-based businesses—such as salons, spas, medical clinics, and auto repair shops—to transition from manual scheduling systems to a real-time digital queue management and booking platform.
 
 ---
 
@@ -85,8 +86,9 @@ Open separate terminal instances to run the local server, asset compiler, and We
   php artisan serve --port=8000
   ```
 * **Vite Asset Watcher:**
-  ```bash
-  npm run dev
+  ```powershell
+  npm.cmd run dev
+  # Or "npm run dev" (if PowerShell execution policy allows running scripts)
   ```
 * **Laravel Reverb WS Server:**
   ```bash
@@ -142,12 +144,12 @@ php artisan test
 
 ### Running Pint Styling Checks
 We enforce strict style guides. Run Pint to check or auto-format changes:
-```bash
+```powershell
 # Check code style
-./vendor/bin/pint --test
+php vendor/bin/pint --test
 
 # Auto-fix code style
-./vendor/bin/pint
+php vendor/bin/pint
 ```
 
 ### NativePHP Desktop App Packaging
@@ -164,3 +166,9 @@ EasyQ is packaged inside a native Electron shell container via NativePHP.
   ```
   The installer executable will be saved in the `dist/` directory at the project root.
 * **Automated Release Pipeline**: A GitHub Actions workflow configured in [.github/workflows/release.yml](file:///d:/xampp/htdocs/EasyQ/.github/workflows/release.yml) triggers automatically when a version tag matching `v*` (e.g., `v1.0.0`) is pushed to the repository, or via manual `workflow_dispatch`. It executes parallel matrix builds for Windows, macOS, and Linux runners, and uploads the generated standalone installer packages directly to a GitHub Release draft.
+
+---
+
+## Branding & Support
+
+EasyQ is designed, developed, and maintained by **[SS Labz](https://ss-labz.pages.dev/)**.

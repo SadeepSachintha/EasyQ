@@ -12,7 +12,7 @@ const showingNavigationDropdown = ref(false);
 
 <template>
     <div>
-        <div class="min-h-screen bg-gray-100">
+        <div class="min-h-screen bg-gray-100 flex flex-col">
             <nav
                 class="border-b border-gray-100 bg-white"
             >
@@ -190,9 +190,14 @@ const showingNavigationDropdown = ref(false);
             </header>
 
             <!-- Page Content -->
-            <main>
+            <main class="flex-grow">
                 <slot />
             </main>
+
+            <!-- Footer -->
+            <footer class="py-6 text-center text-xs text-gray-500 border-t border-gray-200 bg-white">
+                <p>&copy; 2026 EasyQ. A product of <a href="https://ss-labz.pages.dev/" target="_blank" rel="noopener noreferrer" class="hover:text-gray-800 transition-colors underline font-medium">SS Labz</a>. All rights reserved.</p>
+            </footer>
         </div>
     </div>
 </template>
