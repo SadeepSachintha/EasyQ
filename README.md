@@ -36,13 +36,13 @@
 
 ## Technical Stack
 
-* **Backend Framework:** Laravel 12 (PHP 8.2)
+* **Backend Framework:** Laravel 12 (PHP 8.3)
 * **Multi-Tenancy Engine:** Stancl/Tenancy (`stancl/tenancy` v3)
 * **Frontend SPA Bridge:** Inertia.js (Vue 3, Tailwind CSS)
 * **WebSockets Server:** Laravel Reverb (Native PHP WebSockets)
-* **Database Manager:** MariaDB (scaffolded locally on port `3307`)
+* **Database Manager:** MariaDB (scaffolded locally on port `3307` for development) / SQLite (custom AppData roaming pathing for production)
 * **Desktop Wrapper:** NativePHP (Electron)
-* **CI/CD Runner:** GitHub Actions (MySQL service container & Laravel Pint)
+* **CI/CD Runner:** GitHub Actions (MySQL 8.0 / PHP 8.3 runner & Laravel Pint)
 
 ---
 
@@ -155,7 +155,11 @@ php vendor/bin/pint
 ### NativePHP Desktop App Packaging
 EasyQ is packaged inside a native Electron shell container via NativePHP.
 
-* **Configuration**: Managed inside [config/nativephp.php](file:///d:/xampp/htdocs/EasyQ/config/nativephp.php) and [NativeAppServiceProvider.php](file:///d:/xampp/htdocs/EasyQ/app/Providers/NativeAppServiceProvider.php) (window size, title bar routing, background workers).
+* **Configuration & Native Drivers**: Managed inside [config/nativephp.php](file:///d:/xampp/htdocs/EasyQ/config/nativephp.php) and [NativeAppServiceProvider.php](file:///d:/xampp/htdocs/EasyQ/app/Providers/NativeAppServiceProvider.php) (window size, title bar routing, background workers).
+* **Production Database Resolution**:
+  - In production, NativePHP operates entirely on SQLite (since embedded PHP binaries lack the standard `pdo_mysql` driver).
+  - Inside [AppServiceProvider.php](file:///d:/xampp/htdocs/EasyQ/app/Providers/AppServiceProvider.php), we dynamically match the Stancl Tenancy central connection to the active NativePHP connection configuration.
+  - A custom [SQLiteProductionDatabaseManager.php](file:///d:/xampp/htdocs/EasyQ/app/Tenancy/SQLiteProductionDatabaseManager.php) ensures that tenant schemas are dynamically created, stored, and migrated in the user's AppData directory (`AppData/Roaming/easyq/database/`).
 * **Run in Development**: Start the Electron shell and auto-reload:
   ```bash
   php artisan native:serve
