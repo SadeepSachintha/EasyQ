@@ -65,7 +65,6 @@ return [
         'AZURE_*',
         'GITHUB_*',
         'DO_SPACES_*',
-        '*_SECRET',
         'ZEPHPYR_*',
         'NATIVEPHP_UPDATER_PATH',
         'NATIVEPHP_APPLE_ID',
