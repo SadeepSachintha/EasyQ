@@ -13,9 +13,6 @@ class NativeAppServiceProvider implements ProvidesPhpIni
      */
     public function boot(): void
     {
-        // Dynamically override the cached tenancy central connection to match the runtime database default
-        config(['tenancy.database.central_connection' => config('database.default')]);
-
         Window::open()
             ->width(1280)
             ->height(800)
