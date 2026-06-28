@@ -105,14 +105,14 @@ return [
          * The updater provider to use.
          * Supported: "github", "s3", "spaces"
          */
-        'default' => env('NATIVEPHP_UPDATER_PROVIDER', 'spaces'),
+        'default' => env('NATIVEPHP_UPDATER_PROVIDER', 'github'),
 
         'providers' => [
             'github' => [
                 'driver' => 'github',
-                'repo' => env('GITHUB_REPO'),
-                'owner' => env('GITHUB_OWNER'),
-                'token' => env('GITHUB_TOKEN'),
+                'repo' => env('GITHUB_REPO', 'EasyQ'),
+                'owner' => env('GITHUB_OWNER', 'SadeepSachintha'),
+                'token' => env('GITHUB_TOKEN', 'dummy-token'),
                 'vPrefixedTagName' => env('GITHUB_V_PREFIXED_TAG_NAME', true),
                 'private' => env('GITHUB_PRIVATE', false),
                 'channel' => env('GITHUB_CHANNEL', 'latest'),
