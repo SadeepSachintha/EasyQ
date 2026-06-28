@@ -2,8 +2,8 @@
 
 namespace App\Tenancy;
 
-use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager as BaseManager;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager as BaseManager;
 
 class SQLiteProductionDatabaseManager extends BaseManager
 {
@@ -13,20 +13,22 @@ class SQLiteProductionDatabaseManager extends BaseManager
         $internalPath = config('nativephp-internal.database_path');
         if ($internalPath) {
             $dir = dirname($internalPath);
-            if (!file_exists($dir)) {
+            if (! file_exists($dir)) {
                 mkdir($dir, 0755, true);
             }
-            return $dir . '/' . $databaseName . '.sqlite';
+
+            return "{$dir}/{$databaseName}.sqlite";
         }
 
         // Default local development fallback
-        return database_path($databaseName . '.sqlite');
+        return database_path("{$databaseName}.sqlite");
     }
 
     public function createDatabase(TenantWithDatabase $tenant): bool
     {
         try {
             $path = $this->getPath($tenant->database()->getName());
+
             return file_put_contents($path, '') !== false;
         } catch (\Throwable $th) {
             return false;
