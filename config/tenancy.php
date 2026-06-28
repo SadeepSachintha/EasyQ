@@ -47,7 +47,7 @@ return [
      * Database tenancy config. Used by DatabaseTenancyBootstrapper.
      */
     'database' => [
-        'central_connection' => env('DB_CONNECTION', 'central'),
+        'central_connection' => config('database.default'),
 
         /**
          * Connection used as a "template" for the dynamically created tenant database connection.
@@ -66,7 +66,7 @@ return [
          * TenantDatabaseManagers are classes that handle the creation & deletion of tenant databases.
          */
         'managers' => [
-            'sqlite' => SQLiteDatabaseManager::class,
+            'sqlite' => \App\Tenancy\SQLiteProductionDatabaseManager::class,
             'mysql' => MySQLDatabaseManager::class,
             'mariadb' => MySQLDatabaseManager::class,
             'pgsql' => PostgreSQLDatabaseManager::class,
