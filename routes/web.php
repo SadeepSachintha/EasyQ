@@ -23,10 +23,13 @@ foreach (['localhost', '127.0.0.1'] as $domain) {
             $domain = "{$id}.localhost";
             $tenant->domains()->create(['domain' => $domain]);
 
+            $port = $request->getPort();
+            $portStr = ($port && $port != 80 && $port != 443) ? ":{$port}" : '';
+
             return response()->json([
                 'success' => true,
                 'domain' => $domain,
-                'redirect_url' => "http://{$domain}:8000/register",
+                'redirect_url' => "http://{$domain}{$portStr}/register",
             ]);
         });
     });
