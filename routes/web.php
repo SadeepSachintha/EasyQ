@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -30,6 +31,37 @@ foreach (['localhost', '127.0.0.1'] as $domain) {
                 'success' => true,
                 'domain' => $domain,
                 'redirect_url' => "http://{$domain}{$portStr}/register",
+            ]);
+        });
+
+        Route::get('/check-tenant', function (Request $request) {
+            $request->validate([
+                'company' => 'required|string|max:50|alpha_dash',
+            ]);
+
+            $id = strtolower($request->company);
+            $tenant = Tenant::find($id);
+
+            if (! $tenant) {
+                return response()->json([
+                    'message' => 'This business domain does not exist.',
+                ], 404);
+            }
+
+            $hasUsers = false;
+            $tenant->run(function () use (&$hasUsers) {
+                $hasUsers = User::exists();
+            });
+
+            $port = $request->getPort();
+            $portStr = ($port && $port != 80 && $port != 443) ? ":{$port}" : '';
+            $redirectUrl = $hasUsers
+                ? "http://{$id}.localhost{$portStr}/login"
+                : "http://{$id}.localhost{$portStr}/register";
+
+            return response()->json([
+                'success' => true,
+                'redirect_url' => $redirectUrl,
             ]);
         });
     });

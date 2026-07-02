@@ -60,9 +60,17 @@
                 <div class="absolute -top-16 -right-16 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl"></div>
                 <div class="absolute -bottom-16 -left-16 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl"></div>
 
-                <h3 class="text-2xl font-bold mb-2">Create Your Business Domain</h3>
-                <p class="text-gray-400 text-sm mb-6">Launch a dedicated instance for your company in 5 seconds.</p>
+                <!-- Tabs -->
+                <div class="flex border-b border-gray-800 mb-6">
+                    <button id="tab-create" type="button" class="flex-1 pb-3 text-sm font-semibold border-b-2 border-blue-500 text-white focus:outline-none transition-all">
+                        Create Business
+                    </button>
+                    <button id="tab-login" type="button" class="flex-1 pb-3 text-sm font-semibold border-b-2 border-transparent text-gray-400 hover:text-white focus:outline-none transition-all">
+                        Login to Business
+                    </button>
+                </div>
 
+                <!-- Create Tenant Form -->
                 <form id="tenant-form" class="space-y-6">
                     @csrf
                     <div>
@@ -89,6 +97,23 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/></svg>
                     </button>
                 </form>
+
+                <!-- Login Tenant Form -->
+                <form id="login-form" class="space-y-6 hidden">
+                    <div>
+                        <label for="login-company" class="block text-xs uppercase tracking-wider text-gray-400 mb-2 font-semibold">Business Name (Subdomain)</label>
+                        <div class="relative flex items-center">
+                            <input type="text" id="login-company" name="company" placeholder="my-business" required
+                                class="w-full bg-gray-950/80 border border-gray-850 rounded-xl px-4 py-3 text-white placeholder-gray-650 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-mono font-semibold">
+                            <span class="absolute right-4 text-gray-500 font-semibold font-mono">.localhost</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-4 rounded-xl transition-all duration-300 glow-btn flex items-center justify-center space-x-2">
+                        <span>Access My Business</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </form>
             </div>
         </div>
     </main>
@@ -100,12 +125,43 @@
 
     <!-- Form Script -->
     <script>
-        document.getElementById('tenant-form').addEventListener('submit', async (e) => {
+        const tabCreate = document.getElementById('tab-create');
+        const tabLogin = document.getElementById('tab-login');
+        const createForm = document.getElementById('tenant-form');
+        const loginForm = document.getElementById('login-form');
+        const errorBox = document.getElementById('error-box');
+        const successBox = document.getElementById('success-box');
+
+        // Toggle Tab: Create
+        tabCreate.addEventListener('click', () => {
+            tabCreate.classList.add('border-blue-500', 'text-white');
+            tabCreate.classList.remove('border-transparent', 'text-gray-400');
+            tabLogin.classList.remove('border-blue-500', 'text-white');
+            tabLogin.classList.add('border-transparent', 'text-gray-400');
+
+            createForm.classList.remove('hidden');
+            loginForm.classList.add('hidden');
+            errorBox.classList.add('hidden');
+            successBox.classList.add('hidden');
+        });
+
+        // Toggle Tab: Login
+        tabLogin.addEventListener('click', () => {
+            tabLogin.classList.add('border-blue-500', 'text-white');
+            tabLogin.classList.remove('border-transparent', 'text-gray-400');
+            tabCreate.classList.remove('border-blue-500', 'text-white');
+            tabCreate.classList.add('border-transparent', 'text-gray-400');
+
+            loginForm.classList.remove('hidden');
+            createForm.classList.add('hidden');
+            errorBox.classList.add('hidden');
+            successBox.classList.add('hidden');
+        });
+
+        // Create Tenant Submission
+        createForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const form = e.target;
-            const submitBtn = form.querySelector('button[type="submit"]');
-            const errorBox = document.getElementById('error-box');
-            const successBox = document.getElementById('success-box');
+            const submitBtn = createForm.querySelector('button[type="submit"]');
             
             errorBox.classList.add('hidden');
             successBox.classList.add('hidden');
@@ -144,6 +200,46 @@
                 errorBox.classList.remove('hidden');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = `<span>Provision My App</span> <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/></svg>`;
+            }
+        });
+
+        // Login Tenant Submission
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            
+            errorBox.classList.add('hidden');
+            successBox.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Connecting to business...';
+
+            try {
+                const company = document.getElementById('login-company').value;
+                const response = await fetch(`/check-tenant?company=${encodeURIComponent(company)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Business domain not found.');
+                }
+
+                successBox.innerHTML = `<strong>Success!</strong> Accessing your business panel...`;
+                successBox.classList.remove('hidden');
+
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 1500);
+
+            } catch (err) {
+                errorBox.textContent = err.message;
+                errorBox.classList.remove('hidden');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<span>Access My Business</span> <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/></svg>`;
             }
         });
     </script>
