@@ -111,7 +111,7 @@ return [
                 'driver' => 'github',
                 'repo' => env('GITHUB_REPO', 'EasyQ'),
                 'owner' => env('GITHUB_OWNER', 'SadeepSachintha'),
-                'token' => env('GITHUB_TOKEN', 'dummy-token'),
+                'token' => env('GITHUB_TOKEN'),
                 'vPrefixedTagName' => env('GITHUB_V_PREFIXED_TAG_NAME', true),
                 'private' => env('GITHUB_PRIVATE', false),
                 'channel' => env('GITHUB_CHANNEL', 'latest'),
