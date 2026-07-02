@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Native\Laravel\Contracts\ProvidesPhpIni;
 use Native\Laravel\Facades\Window;
+use Native\Laravel\Facades\ChildProcess;
 
 class NativeAppServiceProvider implements ProvidesPhpIni
 {
@@ -13,6 +14,9 @@ class NativeAppServiceProvider implements ProvidesPhpIni
      */
     public function boot(): void
     {
+        // Start the Reverb WebSocket server in the background persistently
+        ChildProcess::artisan('reverb:start', 'reverb', null, true);
+
         Window::open()
             ->width(1280)
             ->height(800)
