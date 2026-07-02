@@ -68,6 +68,9 @@ jobs:
     - name: Install Composer Dependencies
       run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist --ignore-platform-reqs
 
+    - name: Inject Electron Localhost DNS Switch
+      run: node -e "const fs = require('fs'); const file = 'vendor/nativephp/electron/resources/js/src/main/index.js'; if (fs.existsSync(file)) { let content = fs.readFileSync(file, 'utf8'); if (!content.includes('host-rules')) { content = content.replace(\"import {app} from 'electron'\", \"import {app} from 'electron'\\n\\n// Map all *.localhost subdomains to 127.0.0.1 locally to support offline tenant routing\\napp.commandLine.appendSwitch('host-rules', 'MAP *.localhost 127.0.0.1');\"); fs.writeFileSync(file, content, 'utf8'); console.log('Successfully injected host-rules switch into Electron boot index.js'); } }"
+
     - name: Install NPM Dependencies
       run: npm ci
 
