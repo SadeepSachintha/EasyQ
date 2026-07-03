@@ -87,6 +87,8 @@ return [
         'content',
         'node_modules',
         '*/tests',
+        'db-data',
+        'dist',
     ],
 
     /**
