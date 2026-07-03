@@ -20,7 +20,8 @@ class NativeAppServiceProvider implements ProvidesPhpIni
         Window::open()
             ->width(1280)
             ->height(800)
-            ->title('EasyQ Desktop Controller');
+            ->title('EasyQ Desktop Controller')
+            ->showDevTools();
     }
 
     /**
