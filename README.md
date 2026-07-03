@@ -160,6 +160,11 @@ EasyQ is packaged inside a native Electron shell container via NativePHP.
   - In production, NativePHP operates entirely on SQLite (since embedded PHP binaries lack the standard `pdo_mysql` driver).
   - Inside [AppServiceProvider.php](file:///d:/xampp/htdocs/EasyQ/app/Providers/AppServiceProvider.php), we dynamically match the Stancl Tenancy central connection to the active NativePHP connection configuration.
   - A custom [SQLiteProductionDatabaseManager.php](file:///d:/xampp/htdocs/EasyQ/app/Tenancy/SQLiteProductionDatabaseManager.php) ensures that tenant schemas are dynamically created, stored, and migrated in the user's AppData directory (`AppData/Roaming/easyq/database/`).
+* **Production & Distribution Fixes**:
+  - **Asset Helper Tenancy Bypass:** Set `'asset_helper_tenancy' => false` in `config/tenancy.php` to serve Vite static assets globally, preventing 404 errors inside tenant subdomains.
+  - **WebSocket Reverb Daemon:** Configured the application to auto-boot the Laravel Reverb WebSocket server as a background, persistent child process in [NativeAppServiceProvider.php](file:///d:/xampp/htdocs/EasyQ/app/Providers/NativeAppServiceProvider.php) to support real-time sync without manual commands.
+  - **Subdomain Routing DNS Bypass:** Appended a Chromium command-line switch (`host-rules` mapping `*.localhost` to `127.0.0.1`) in Electron's entry point to enable offline subdomain routing without modifying the host machine's DNS or `hosts` file.
+  - **Build Copy Exclusions:** Excluded the local `db-data` and `dist` folders from the compilation copy process to avoid locks on active database binary files and nested packaging loops.
 * **Run in Development**: Start the Electron shell and auto-reload:
   ```bash
   php artisan native:serve
