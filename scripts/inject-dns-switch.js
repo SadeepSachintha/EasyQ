@@ -17,5 +17,33 @@ if (fs.existsSync(file)) {
     }
 } else {
     console.error('Electron boot index.js file not found at:', file);
+    
+    // Print diagnostic directory information to see what files exist on the runner
+    const parentDir = path.join(__dirname, '../vendor/nativephp/electron/resources/js');
+    console.log('Listing parent directory:', parentDir);
+    if (fs.existsSync(parentDir)) {
+        try {
+            const files = fs.readdirSync(parentDir);
+            console.log('Files in parent directory:', files);
+            
+            const srcDir = path.join(parentDir, 'src');
+            if (fs.existsSync(srcDir)) {
+                console.log('src directory exists. Files inside src:', fs.readdirSync(srcDir));
+            } else {
+                console.log('src directory does NOT exist under:', parentDir);
+            }
+        } catch (err) {
+            console.error('Failed to read parent directory:', err.message);
+        }
+    } else {
+        console.log('Parent directory does NOT exist:', parentDir);
+        // Print the vendor folder contents
+        const vendorDir = path.join(__dirname, '../vendor/nativephp/electron');
+        if (fs.existsSync(vendorDir)) {
+            console.log('Files in vendor/nativephp/electron:', fs.readdirSync(vendorDir));
+        } else {
+            console.log('vendor/nativephp/electron does NOT exist');
+        }
+    }
     process.exit(1);
 }
