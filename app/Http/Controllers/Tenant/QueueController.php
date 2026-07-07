@@ -39,13 +39,7 @@ class QueueController extends Controller
 
         // Calculate actual average service duration today (in seconds)
         // If there are completed items, compute average. Otherwise use 10 minutes (600s) default.
-        $avgServiceSeconds = DB::table('queue_items')
-            ->whereDate('created_at', $today)
-            ->where('status', 'completed')
-            ->whereNotNull('called_at')
-            ->whereNotNull('completed_at')
-            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, called_at, completed_at)) as avg_time')
-            ->value('avg_time');
+        $avgServiceSeconds = $this->getAverageServiceSeconds($today);
 
         $avgServiceMinutes = $avgServiceSeconds ? ($avgServiceSeconds / 60) : 10;
 
@@ -128,13 +122,7 @@ class QueueController extends Controller
             ->where('status', 'in-service')
             ->count();
 
-        $avgServiceSeconds = DB::table('queue_items')
-            ->whereDate('created_at', $today)
-            ->where('status', 'completed')
-            ->whereNotNull('called_at')
-            ->whereNotNull('completed_at')
-            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, called_at, completed_at)) as avg_time')
-            ->value('avg_time');
+        $avgServiceSeconds = $this->getAverageServiceSeconds($today);
 
         $avgServiceMinutes = $avgServiceSeconds ? ($avgServiceSeconds / 60) : 10;
         $activeCounters = max(1, $inServiceCount);
@@ -256,5 +244,28 @@ class QueueController extends Controller
         broadcast(new QueueUpdated($this->getQueueData()));
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Calculate actual average service duration today (in seconds).
+     * Supports both SQLite (strftime) and MySQL (TIMESTAMPDIFF) dialects.
+     */
+    private function getAverageServiceSeconds(string $today): ?float
+    {
+        $dbDriver = DB::connection()->getDriverName();
+
+        $query = DB::table('queue_items')
+            ->whereDate('created_at', $today)
+            ->where('status', 'completed')
+            ->whereNotNull('called_at')
+            ->whereNotNull('completed_at');
+
+        if ($dbDriver === 'sqlite') {
+            return $query->selectRaw('AVG(strftime("%s", completed_at) - strftime("%s", called_at)) as avg_time')
+                ->value('avg_time');
+        }
+
+        return $query->selectRaw('AVG(TIMESTAMPDIFF(SECOND, called_at, completed_at)) as avg_time')
+            ->value('avg_time');
     }
 }
