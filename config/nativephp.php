@@ -89,6 +89,7 @@ return [
         '*/tests',
         'db-data',
         'dist',
+        'public/hot',
     ],
 
     /**
